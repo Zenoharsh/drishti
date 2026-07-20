@@ -126,6 +126,19 @@ def sync_live():
     try:
         secret = os.environ.get("INGEST_SECRET", "df6d782e5781041d55a476ccd1b0951e")
         result = ingest_poll(x_ingest_secret=secret)
+        
+        # If no new real-world headlines were found, force a baseline reset for the demo
+        if result.get("processed_by_gemini", 0) == 0:
+            db = get_db()
+            db.table("risk_snapshots").insert({
+                "corridor_id": "hormuz",
+                "disruption_score": 0.0,
+                "severity": 0.0,
+                "sanctions_flag": 0.0,
+                "price_delta_norm": 0.0,
+                "ais_density_norm": 0.0
+            }).execute()
+            
         return {"status": "success", "poll_result": result}
     except Exception as e:
         import traceback
