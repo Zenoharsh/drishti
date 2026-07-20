@@ -2,9 +2,36 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, ShieldAlert, Zap, Globe, RefreshCcw, TrendingUp } from "lucide-react";
+import { Activity, ShieldAlert, Zap, RefreshCcw, TrendingUp } from "lucide-react";
 import styles from "./Dashboard.module.css";
 import MapWrapper from "../components/MapWrapper";
+import RiskTimeline from "../components/RiskTimeline";
+
+const DrishtiLogo = ({ className = "", size = 28, color = "currentColor" }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke={color} 
+    strokeWidth="1.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+    style={{ filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.5))" }}
+  >
+    {/* Top Lashes */}
+    <path d="M12 4.5v-2" />
+    <path d="M17 5.5l1.5-1.5" />
+    <path d="M7 5.5L5.5 4" />
+    {/* Eye Shape with Depth */}
+    <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z" />
+    {/* Iris & Pupil */}
+    <circle cx="12" cy="12" r="3" fill={color} fillOpacity="0.2" />
+    <circle cx="12" cy="12" r="1.5" fill={color} />
+  </svg>
+);
 
 const WireframeLoader = () => (
   <div className={styles.wireframeLoader}>
@@ -19,8 +46,10 @@ export default function Dashboard() {
   const [scenarioData, setScenarioData] = useState<any>(null);
   const [procurementData, setProcurementData] = useState<any>(null);
   const [reserveData, setReserveData] = useState<any>(null);
+  const [corridorsData, setCorridorsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [timelineOpen, setTimelineOpen] = useState(false);
 
   const corridor = "hormuz";
   const API_BASE = "http://127.0.0.1:8080";
@@ -32,19 +61,22 @@ export default function Dashboard() {
       const headers = { "Content-Type": "application/json" };
       const body = JSON.stringify({ corridor });
 
-      const [scenRes, procRes, resRes] = await Promise.all([
+      const [scenRes, procRes, resRes, corrRes] = await Promise.all([
         fetch(`${API_BASE}/scenario/quick`, { method: "POST", headers, body }),
         fetch(`${API_BASE}/procurement/quick`, { method: "POST", headers, body }),
-        fetch(`${API_BASE}/reserve?corridor=${corridor}`)
+        fetch(`${API_BASE}/reserve?corridor=${corridor}`),
+        fetch(`${API_BASE}/risk/corridors`)
       ]);
 
-      if (!scenRes.ok || !procRes.ok || !resRes.ok) {
+      if (!scenRes.ok || !procRes.ok || !resRes.ok || !corrRes.ok) {
         throw new Error("Failed to fetch data from backend. Is it running?");
       }
 
       setScenarioData(await scenRes.json());
       setProcurementData(await procRes.json());
       setReserveData(await resRes.json());
+      const corrData = await corrRes.json();
+      setCorridorsData(corrData.corridors || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -67,18 +99,18 @@ export default function Dashboard() {
         </motion.div>
       )}
 
+      <RiskTimeline isOpen={timelineOpen} onClose={() => setTimelineOpen(false)} />
+
       {/* Header Navbar */}
       <header className={styles.header}>
         <div className={styles.headerTitle}>
-          <Globe className={isCrisis ? styles.spikeIndicator : ""} size={28} color={isCrisis ? "var(--md-sys-color-error)" : "var(--md-sys-color-primary)"} />
+          <DrishtiLogo className={isCrisis ? styles.spikeIndicator : ""} size={28} color={isCrisis ? "var(--md-sys-color-error)" : "var(--md-sys-color-primary)"} />
           <h1>Drishti</h1>
         </div>
         
         <nav className={styles.navLinks}>
           <span className={`${styles.navLink} ${styles.active}`}>Live Operations</span>
-          <span className={styles.navLink}>Corridor Network</span>
-          <span className={styles.navLink}>Procurement AI</span>
-          <span className={styles.navLink}>Settings</span>
+          <span className={styles.navLink} onClick={() => setTimelineOpen(!timelineOpen)} style={{ cursor: 'pointer' }}>Intelligence Feed</span>
         </nav>
         <button onClick={fetchDashboardData} disabled={loading}>
           <RefreshCcw size={18} className={loading ? "animate-spin" : ""} />
@@ -88,7 +120,7 @@ export default function Dashboard() {
 
       {/* Hero Map Section */}
       <div className={styles.heroSection}>
-        <MapWrapper />
+        <MapWrapper corridors={corridorsData} />
       </div>
 
       {/* Content Grid */}

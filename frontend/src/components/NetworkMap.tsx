@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Map, { Source, Layer, Marker, NavigationControl, FullscreenControl, Popup } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-export default function NetworkMap() {
+export default function NetworkMap({ corridors }: { corridors?: any[] }) {
   const [viewState, setViewState] = useState({
     longitude: 65.0,
     latitude: 20.0,
@@ -29,27 +29,45 @@ export default function NetworkMap() {
   ];
 
   const corridorsGeoJSON = useMemo(() => {
+    const defaultFeatures = [
+      {
+        type: "Feature",
+        properties: { color: "#58d5d3", radius: 60, name: "Strait of Hormuz" }, 
+        geometry: { type: "Point", coordinates: [56.25, 26.5667] }
+      },
+      {
+        type: "Feature",
+        properties: { color: "#58d5d3", radius: 40, name: "Bab-el-Mandeb" },
+        geometry: { type: "Point", coordinates: [43.4167, 12.6167] }
+      },
+      {
+        type: "Feature",
+        properties: { color: "#58d5d3", radius: 50, name: "Suez Canal" },
+        geometry: { type: "Point", coordinates: [32.5498, 29.9668] }
+      }
+    ];
+
+    const features = corridors && corridors.length > 0 ? corridors.map((c: any) => {
+      let color = "#58d5d3"; // Stable Transit (Primary)
+      const score = c.disruption_score || 0;
+      if (score > 0.6) {
+        color = "#ffb4ab"; // Critical Shortfall (Error)
+      } else if (score > 0.2) {
+        color = "#d0bcff"; // Elevated Risk (Tertiary)
+      }
+      
+      return {
+        type: "Feature",
+        properties: { color, radius: c.radius_km || 60, name: c.corridor_name },
+        geometry: { type: "Point", coordinates: [c.center_lon, c.center_lat] }
+      };
+    }) : defaultFeatures;
+
     return {
       type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          properties: { color: "#ffb4ab", radius: 60, name: "Strait of Hormuz" }, 
-          geometry: { type: "Point", coordinates: [56.25, 26.5667] }
-        },
-        {
-          type: "Feature",
-          properties: { color: "#58d5d3", radius: 40, name: "Bab-el-Mandeb" },
-          geometry: { type: "Point", coordinates: [43.4167, 12.6167] }
-        },
-        {
-          type: "Feature",
-          properties: { color: "#d0bcff", radius: 50, name: "Suez Canal" },
-          geometry: { type: "Point", coordinates: [32.5498, 29.9668] }
-        }
-      ]
+      features
     };
-  }, []);
+  }, [corridors]);
 
   const onHover = (event: any) => {
     const feature = event.features && event.features[0];

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import subprocess
+import os
 from src.config.db import get_db
 from src.services.calculators import compute_scenario, rank_substitutes, compute_drawdown, compute_economic_impact
 
@@ -107,3 +109,14 @@ def reserve(corridor: str):
         spr["current_inventory_m3"], spr.get("safety_floor_pct", 0.20),
     )
     return {"corridor": corridor, **drawdown}
+
+
+@router.post("/run-simulation")
+def run_simulation():
+    try:
+        script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "scripts", "simulate_crisis.py")
+        result = subprocess.run(["python", script_path], capture_output=True, text=True, check=True)
+        return {"status": "success", "output": result.stdout}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Simulation failed: {e.stderr}")
+

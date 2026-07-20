@@ -21,6 +21,9 @@ def get_risk_corridors():
         result.append({
             "corridor_id": c["id"],
             "corridor_name": c["name"],
+            "center_lat": c["center_lat"],
+            "center_lon": c["center_lon"],
+            "radius_km": c["radius_km"],
             "supplier": c.get("supplier"),
             "disruption_score": latest[0]["disruption_score"] if latest else None,
             "last_updated": latest[0]["created_at"] if latest else None,
