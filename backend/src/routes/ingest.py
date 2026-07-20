@@ -41,7 +41,8 @@ def ingest_poll(x_ingest_secret: str | None = Header(default=None)):
     for headline in unprocessed:
         try:
             extraction = gemini_engine.extract_risk_signal(headline["title"])
-        except Exception:
+        except Exception as e:
+            print(f"Gemini extraction failed for headline: {headline['title']} - Error: {e}")
             continue  # one bad extraction shouldn't kill the whole poll
 
         corridor_id = extraction.corridor

@@ -50,7 +50,7 @@ def _get_client() -> genai.Client:
 def extract_risk_signal(headline_title: str) -> RiskExtraction:
     client = _get_client()
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-1.5-flash",
         contents=f"Headline: {headline_title}",
         config={
             "system_instruction": SYSTEM_PROMPT,

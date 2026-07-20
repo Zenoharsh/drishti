@@ -47,19 +47,16 @@ def trigger_crisis():
     print("✅ Raw crisis data injected into database.")
     print("🧠 Waking up Gemini AI Ingestion Engine to process the event...")
     
-    import urllib.request
-    port = os.environ.get("PORT", "8080")
-    req = urllib.request.Request(
-        f'http://127.0.0.1:{port}/ingest/poll',
-        data=b'',
-        headers={'X-Ingest-Secret': os.environ.get("INGEST_SECRET", "df6d782e5781041d55a476ccd1b0951e")}
-    )
-    req.get_method = lambda: 'POST'
+    from src.routes.ingest import ingest_poll
     try:
-        urllib.request.urlopen(req)
-        print("✅ AI Analysis complete! Refresh your Next.js dashboard now to see the spikes!")
+        secret = os.environ.get("INGEST_SECRET", "df6d782e5781041d55a476ccd1b0951e")
+        result = ingest_poll(x_ingest_secret=secret)
+        print(f"✅ AI Analysis complete! Processed {result.get('processed_by_gemini', 0)} headlines.")
     except Exception as e:
         print(f"❌ Failed to wake up ingestion engine: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == "__main__":
     trigger_crisis()
