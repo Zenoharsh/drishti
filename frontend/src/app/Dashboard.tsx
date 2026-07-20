@@ -61,12 +61,10 @@ export default function Dashboard() {
       const headers = { "Content-Type": "application/json" };
       const body = JSON.stringify({ corridor });
 
-      const [scenRes, procRes, resRes, corrRes] = await Promise.all([
-        fetch(`${API_BASE}/scenario/quick`, { method: "POST", headers, body }),
-        fetch(`${API_BASE}/procurement/quick`, { method: "POST", headers, body }),
-        fetch(`${API_BASE}/reserve?corridor=${corridor}`),
-        fetch(`${API_BASE}/risk/corridors`)
-      ]);
+      const scenRes = await fetch(`${API_BASE}/scenario/quick`, { method: "POST", headers, body });
+      const procRes = await fetch(`${API_BASE}/procurement/quick`, { method: "POST", headers, body });
+      const resRes = await fetch(`${API_BASE}/reserve?corridor=${corridor}`);
+      const corrRes = await fetch(`${API_BASE}/risk/corridors`);
 
       if (!scenRes.ok || !procRes.ok || !resRes.ok || !corrRes.ok) {
         throw new Error("Failed to fetch data from backend. Is it running?");
