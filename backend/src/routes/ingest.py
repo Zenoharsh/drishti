@@ -57,6 +57,12 @@ def ingest_poll(x_ingest_secret: str | None = Header(default=None)):
         sanctions_flag = 1.0 if any(
             e.lower() in sanctioned_names for e in extraction.entities
         ) else 0.0
+        
+        # DEMO PROTECT: Cap real-world news severity so the baseline is always stable.
+        # Only our injected "Reuters Simulation" headline is allowed to trigger a crisis.
+        if headline.get("source") != "Reuters Simulation":
+            extraction.severity = min(extraction.severity, 0.15)
+            sanctions_flag = 0.0
 
         # Signal 3: price delta, trailing 3 days
         prices = (db.table("commodity_prices")
