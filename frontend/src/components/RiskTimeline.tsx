@@ -12,7 +12,7 @@ export default function RiskTimeline({ isOpen, onClose }: { isOpen: boolean, onC
   const handleRunSimulation = async () => {
     setSimulating(true);
     try {
-      const res = await fetch("http://127.0.0.1:8080/run-simulation", {
+      const res = await fetch((process.env.NEXT_PUBLIC_API_URL || "https://drishti-on9a.onrender.com") + "/run-simulation", {
         method: "POST"
       });
       if (res.ok) {

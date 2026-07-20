@@ -33,7 +33,8 @@ export function useRiskHistory(corridorId: string) {
     setError(null);
 
     try {
-      const res = await fetch(`http://localhost:8080/risk/history/${corridorId}?page=${page}&page_size=50`);
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://drishti-on9a.onrender.com";
+      const res = await fetch(`${API_BASE}/risk/history/${corridorId}?page=${page}&page_size=50`);
       if (!res.ok) throw new Error("Failed to fetch historical risk data");
       
       const json = await res.json();
