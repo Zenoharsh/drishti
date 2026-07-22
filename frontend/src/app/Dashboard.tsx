@@ -163,8 +163,9 @@ export default function Dashboard() {
       <AnimatePresence>
         {!loading && scenarioData && (
           <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            initial={{ y: -20, opacity: 0, x: "-50%" }}
+            animate={{ y: 0, opacity: 1, x: "-50%" }}
+            exit={{ y: -20, opacity: 0, x: "-50%" }}
             className={`${styles.aiBanner} ${isCrisis ? styles.crisis : styles.stable}`}
             style={{ borderRadius: '12px', alignItems: 'center' }}
           >
