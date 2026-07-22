@@ -11,6 +11,9 @@ router = APIRouter()
 class CorridorRequest(BaseModel):
     corridor: str
 
+class PrecedentRequest(BaseModel):
+    query: str
+
 
 def _latest_score(db, corridor_id: str) -> float:
     latest = (db.table("risk_snapshots")
@@ -69,6 +72,29 @@ def scenario_quick(req: CorridorRequest):
         **result,
         "economic_impact_30_days": economic_impact
     }
+
+
+@router.post("/scenario/precedents")
+def get_precedents(req: PrecedentRequest):
+    from src.services.gemini_engine import embed_text
+    db = get_db()
+    
+    try:
+        # Generate embedding for the search query
+        query_embedding = embed_text(req.query)
+        
+        # Call the Supabase RPC function we created in 03_pgvector.sql
+        response = db.rpc('match_precedents', {
+            'query_embedding': query_embedding,
+            'match_threshold': 0.5,
+            'match_count': 3
+        }).execute()
+        
+        return {"status": "success", "precedents": response.data}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/procurement/quick")

@@ -68,3 +68,13 @@ def extract_risk_signal(headline_title: str) -> RiskExtraction:
         entities=data.get("entities", []),
         severity=max(0.0, min(1.0, float(data.get("severity", 0.0)))),
     )
+
+def embed_text(text: str) -> list[float]:
+    """Generates a 768-dimensional text embedding using Gemini."""
+    client = _get_client()
+    response = client.models.embed_content(
+        model="gemini-embedding-2",
+        contents=text,
+        config={'output_dimensionality': 768}
+    )
+    return response.embeddings[0].values

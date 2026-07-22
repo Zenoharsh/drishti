@@ -91,6 +91,7 @@ export default function Dashboard() {
   const [procurementData, setProcurementData] = useState<any>(null);
   const [reserveData, setReserveData] = useState<any>(null);
   const [corridorsData, setCorridorsData] = useState<any[]>([]);
+  const [precedentsData, setPrecedentsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -100,7 +101,7 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [corrRes, scenRes, procRes, resRes] = await Promise.all([
+      const [corrRes, scenRes, procRes, resRes, precRes] = await Promise.all([
         fetch(`${API_BASE}/risk/corridors`),
         fetch(`${API_BASE}/scenario/quick`, {
           method: "POST",
@@ -112,7 +113,12 @@ export default function Dashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ corridor: activeCorridor })
         }),
-        fetch(`${API_BASE}/reserve?corridor=${activeCorridor}`)
+        fetch(`${API_BASE}/reserve?corridor=${activeCorridor}`),
+        fetch(`${API_BASE}/scenario/precedents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: `Severe supply chain disruption and escalation in ${activeCorridor}` })
+        })
       ]);
 
       if (corrRes.ok) {
@@ -122,6 +128,10 @@ export default function Dashboard() {
       if (scenRes.ok) setScenarioData(await scenRes.json()); else setScenarioData(null);
       if (procRes.ok) setProcurementData(await procRes.json()); else setProcurementData(null);
       if (resRes.ok) setReserveData(await resRes.json()); else setReserveData(null);
+      if (precRes.ok) {
+        const pData = await precRes.json();
+        setPrecedentsData(pData.precedents || []);
+      } else setPrecedentsData([]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -360,6 +370,57 @@ export default function Dashboard() {
               )
             )}
           </motion.div>
+
+        {/* 4: Historical Precedents */}
+        <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className={`${styles.surfaceCard} ${styles.card}`}
+          >
+            <div className={styles.cardHeader}>
+              <Info size={24} color="#8b5cf6" className={styles.cardHeaderIcon} />
+              <div className={styles.cardHeaderTexts}>
+                <h2>Historical Precedents</h2>
+                <p>AI similarity search against past global supply shocks.</p>
+              </div>
+            </div>
+            
+            {loading && precedentsData.length === 0 ? <WireframeLoader /> : (
+              !isCrisis ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'center', padding: '2rem' }}>
+                  <CheckCircle size={32} style={{ marginBottom: '1rem', color: '#10b981', opacity: 0.8 }} />
+                  <p>No active anomalies to compare.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {precedentsData.slice(0, 2).map((p: any, idx: number) => (
+                    <motion.div 
+                      key={p.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 + (idx * 0.1) }}
+                      style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #8b5cf6' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <strong style={{ color: '#fff' }}>{p.event_title}</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.2)', padding: '2px 8px', borderRadius: '12px' }}>
+                          {(p.similarity * 100).toFixed(1)}% Match
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--md-sys-color-on-surface-variant)', marginBottom: '0.5rem' }}>
+                        {p.description}
+                      </p>
+                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)' }}>
+                        <strong>Impact:</strong> {p.economic_impact_summary}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )
+            )}
+          </motion.div>
+
         {/* End Grid */}
       </div>
     </div>
