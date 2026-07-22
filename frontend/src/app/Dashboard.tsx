@@ -49,6 +49,42 @@ const WireframeLoader = () => (
   </div>
 );
 
+const TrendGraph = ({ spikePct, isCrisis }: { spikePct: number, isCrisis: boolean }) => {
+  const points = Array.from({ length: 30 }, (_, i) => {
+    const day = i;
+    // Logistic curve simulation for 30-day projection
+    const val = spikePct / (1 + Math.exp(-0.4 * (day - 12)));
+    return { day, val };
+  });
+
+  const maxVal = Math.max(10, spikePct * 1.1);
+  const pathData = points.map((p, i) => {
+    const x = (i / 29) * 300;
+    const y = 80 - (p.val / maxVal) * 70;
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+
+  const color = isCrisis ? "var(--md-sys-color-error)" : "var(--md-sys-color-primary)";
+
+  return (
+    <div style={{ width: '100%', height: '80px', marginTop: '1.5rem', marginBottom: '0.5rem', position: 'relative' }}>
+      <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="spikeGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.0} />
+          </linearGradient>
+        </defs>
+        <path d={`${pathData} L 300 80 L 0 80 Z`} fill="url(#spikeGrad)" />
+        <path d={pathData} fill="none" stroke={color} strokeWidth="2.5" />
+      </svg>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderBottom: '1px solid rgba(255,255,255,0.1)' }} />
+      <span style={{ position: 'absolute', bottom: -20, left: 0, fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>Day 0</span>
+      <span style={{ position: 'absolute', bottom: -20, right: 0, fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>Day 30 Projection</span>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const [scenarioData, setScenarioData] = useState<any>(null);
   const [procurementData, setProcurementData] = useState<any>(null);
@@ -128,9 +164,10 @@ export default function Dashboard() {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className={`${styles.aiBanner} ${isCrisis ? styles.crisis : styles.stable}`}
+            style={{ borderRadius: '12px', alignItems: 'center' }}
           >
-            {isCrisis ? <AlertTriangle size={18} /> : <CheckCircle size={18} />}
-            <span>
+            {isCrisis ? <AlertTriangle size={24} style={{ flexShrink: 0 }} /> : <CheckCircle size={24} style={{ flexShrink: 0 }} />}
+            <span style={{ textAlign: 'left', lineHeight: 1.4 }}>
               {isCrisis 
                 ? "CRITICAL ALERT: Severe disruption in the Strait of Hormuz. Global crude supply is restricted, triggering immediate fuel price spikes and GDP drag."
                 : "Global energy transit corridors are stable. No active supply chain disruptions detected."}
@@ -163,23 +200,26 @@ export default function Dashboard() {
             </div>
             
             {loading && !scenarioData ? <WireframeLoader /> : (
-              <div className={styles.stats} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: '1rem' }}>
-                <div className={styles.statBox} style={{ flex: 1 }}>
-                  <span style={{ whiteSpace: 'nowrap' }}>Supply Chain Risk <Tooltip text="Probability of a sustained global supply shortage based on real-time news and AIS vessel tracking." /></span>
-                  <strong className={isCrisis ? styles.spikeIndicator : ""}>{disruptionScore}%</strong>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                <div className={styles.stats} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div className={styles.statBox} style={{ flex: 1 }}>
+                    <span style={{ whiteSpace: 'nowrap' }}>Supply Chain Risk <Tooltip text="Probability of a sustained global supply shortage based on real-time news and AIS vessel tracking." /></span>
+                    <strong className={isCrisis ? styles.spikeIndicator : ""}>{disruptionScore}%</strong>
+                  </div>
+                  <div className={styles.statBox} style={{ flex: 1 }}>
+                    <span style={{ whiteSpace: 'nowrap' }}>Est. Fuel Price Spike</span>
+                    <strong className={isCrisis ? styles.spikeIndicator : ""}>
+                      +{scenarioData?.economic_impact_30_days?.fuel_price_spike_pct}%
+                    </strong>
+                  </div>
+                  <div className={styles.statBox} style={{ flex: 1 }}>
+                    <span style={{ whiteSpace: 'nowrap' }}>GDP Drag (30d)</span>
+                    <strong className={styles.danger}>
+                      -{scenarioData?.economic_impact_30_days?.gdp_drag_pct}%
+                    </strong>
+                  </div>
                 </div>
-                <div className={styles.statBox} style={{ flex: 1 }}>
-                  <span style={{ whiteSpace: 'nowrap' }}>Est. Fuel Price Spike</span>
-                  <strong className={isCrisis ? styles.spikeIndicator : ""}>
-                    +{scenarioData?.economic_impact_30_days?.fuel_price_spike_pct}%
-                  </strong>
-                </div>
-                <div className={styles.statBox} style={{ flex: 1 }}>
-                  <span style={{ whiteSpace: 'nowrap' }}>GDP Drag (30d)</span>
-                  <strong className={styles.danger}>
-                    -{scenarioData?.economic_impact_30_days?.gdp_drag_pct}%
-                  </strong>
-                </div>
+                <TrendGraph spikePct={scenarioData?.economic_impact_30_days?.fuel_price_spike_pct || 0} isCrisis={isCrisis} />
               </div>
             )}
           </motion.div>
