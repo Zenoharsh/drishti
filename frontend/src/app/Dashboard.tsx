@@ -154,7 +154,6 @@ export default function Dashboard() {
             transition={{ delay: 0.1 }}
             className={`${styles.surfaceCard} ${styles.card}`}
           >
-          >
             <div className={styles.cardHeader}>
               <Activity size={24} color="var(--md-sys-color-primary)" className={styles.cardHeaderIcon} />
               <div className={styles.cardHeaderTexts}>
@@ -190,7 +189,6 @@ export default function Dashboard() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className={`${styles.surfaceCard} ${styles.card}`}
-          >
           >
             <div className={styles.cardHeader}>
               <TrendingUp size={24} color="var(--md-sys-color-tertiary)" className={styles.cardHeaderIcon} />
@@ -231,7 +229,6 @@ export default function Dashboard() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
             className={`${styles.surfaceCard} ${styles.card}`}
-          >
           >
             <div className={styles.cardHeader}>
               <Zap size={24} color="var(--md-sys-color-error)" className={styles.cardHeaderIcon} />
