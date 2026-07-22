@@ -46,12 +46,7 @@ def start_scheduler():
     scheduler.add_job(update_commodity_prices, IntervalTrigger(minutes=15), id="update_prices", replace_existing=True)
     scheduler.add_job(run_intelligence_ingestion, IntervalTrigger(minutes=5), id="run_ingestion", replace_existing=True)
     
-    # Run once on startup
-    try:
-        update_commodity_prices()
-    except Exception:
-        pass
-        
+    # Do not run synchronously on startup to avoid deadlocking FastAPI if yfinance hangs.
     scheduler.start()
     logger.info("Background scheduler started.")
 
