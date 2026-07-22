@@ -125,19 +125,24 @@ def rank_substitutes(target_api: float, target_sulfur: float,
             chem_penalty = 0
         elif api_diff <= 6 and sulfur_diff <= 0.3:
             compatibility = "moderate"
-            chem_penalty = 5
+            chem_penalty = 10
         else:
             compatibility = "low"
-            chem_penalty = 20
+            chem_penalty = 25
 
         # Optimize for lowest total cost and fastest arrival, while matching chemistry.
-        # $1 cost = 1 point penalty; 1 day delay = 0.5 point penalty
         spot_price = source.get("current_spot_price_usd", 80.0)
         freight = source.get("freight_cost_per_bbl", 3.0)
         days = source.get("estimated_replacement_arrival_days", 20)
         
         total_cost = spot_price + freight
-        score = total_cost + (days * 0.5) + chem_penalty
+        
+        # Base score 100. Deduct for price > $75, arrival > 10 days, and chem mismatch.
+        price_penalty = max(0, total_cost - 75.0) * 1.5
+        time_penalty = max(0, days - 10) * 1.0
+        
+        raw_match_score = 100 - price_penalty - time_penalty - chem_penalty
+        match_score = max(0, min(100, raw_match_score))
 
         ranked.append({
             "source_id": source["id"],
@@ -148,11 +153,12 @@ def rank_substitutes(target_api: float, target_sulfur: float,
             "estimated_replacement_arrival_days": days,
             "current_spot_price_usd": spot_price,
             "freight_cost_per_bbl": freight,
-            "procurement_score": round(score, 2),
-            "_sort_key": score,
+            "procurement_score": int(round(match_score)),
+            "_sort_key": match_score,
         })
 
-    ranked.sort(key=lambda x: x["_sort_key"])
+    # Sort descending so highest match score is first
+    ranked.sort(key=lambda x: x["_sort_key"], reverse=True)
     for r in ranked:
         del r["_sort_key"]
     return ranked[:top_n]
