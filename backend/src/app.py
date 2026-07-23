@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import ingest, risk, actions, twin
+from src.routes import ingest, risk, actions, twin, dashboard
 
 from contextlib import asynccontextmanager
 from src.tasks.scheduler import start_scheduler, stop_scheduler
@@ -29,6 +29,7 @@ app.include_router(ingest.router)
 app.include_router(risk.router)
 app.include_router(actions.router)
 app.include_router(twin.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/health")

@@ -99,41 +99,28 @@ export default function Dashboard() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://drishti-on9a.onrender.com";
 
   const fetchDashboardData = async () => {
-    setLoading(true);
+    if (!scenarioData) setLoading(true);
     try {
-      const [corrRes, scenRes, procRes, resRes, precRes] = await Promise.all([
-        fetch(`${API_BASE}/risk/corridors`),
-        fetch(`${API_BASE}/scenario/quick`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ corridor: activeCorridor })
-        }),
-        fetch(`${API_BASE}/procurement/quick`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ corridor: activeCorridor })
-        }),
-        fetch(`${API_BASE}/reserve?corridor=${activeCorridor}`),
-        fetch(`${API_BASE}/scenario/precedents`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: `Severe supply chain disruption and escalation in ${activeCorridor}` })
-        })
-      ]);
-
-      if (corrRes.ok) {
-        const corrData = await corrRes.json();
-        setCorridorsData(corrData.corridors || []);
+      const stateRes = await fetch(`${API_BASE}/dashboard/state`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ corridor: activeCorridor })
+      });
+      if (stateRes.ok) {
+        const stateData = await stateRes.json();
+        setCorridorsData(stateData.corridors_data?.corridors || []);
+        setScenarioData(stateData.scenario_data || null);
+        setProcurementData(stateData.procurement_data || null);
+        setReserveData(stateData.reserve_data || null);
+        setPrecedentsData(stateData.precedents_data?.precedents || []);
+        setError(""); // Clear error on success
+      } else {
+        const errData = await stateRes.json();
+        throw new Error(errData.detail || "Failed to fetch dashboard data");
       }
-      if (scenRes.ok) setScenarioData(await scenRes.json()); else setScenarioData(null);
-      if (procRes.ok) setProcurementData(await procRes.json()); else setProcurementData(null);
-      if (resRes.ok) setReserveData(await resRes.json()); else setReserveData(null);
-      if (precRes.ok) {
-        const pData = await precRes.json();
-        setPrecedentsData(pData.precedents || []);
-      } else setPrecedentsData([]);
     } catch (err: any) {
-      setError(err.message);
+      console.error(err);
+      setError(err.message || "Failed to connect to API");
     } finally {
       setLoading(false);
     }
@@ -141,7 +128,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 10000);
+    const interval = setInterval(fetchDashboardData, 60000);
     return () => clearInterval(interval);
   }, [activeCorridor]);
 
