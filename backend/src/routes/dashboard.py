@@ -4,9 +4,7 @@ from src.routes.actions import (
     scenario_quick, 
     procurement_quick, 
     reserve, 
-    get_precedents, 
-    CorridorRequest, 
-    PrecedentRequest
+    CorridorRequest
 )
 
 router = APIRouter()
@@ -22,14 +20,12 @@ def get_dashboard_state(req: CorridorRequest):
         scenario_data = scenario_quick(req)
         procurement_data = procurement_quick(req)
         reserve_data = reserve(req.corridor)
-        precedents_data = get_precedents(PrecedentRequest(query=f"Severe supply chain disruption and escalation in {req.corridor}"))
         
         return {
             "corridors_data": corridors_data,
             "scenario_data": scenario_data,
             "procurement_data": procurement_data,
-            "reserve_data": reserve_data,
-            "precedents_data": precedents_data
+            "reserve_data": reserve_data
         }
     except Exception as e:
         import traceback
