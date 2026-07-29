@@ -7,7 +7,7 @@ const NetworkMap = dynamic(() => import("./NetworkMap"), {
   loading: () => <p>Loading Digital Twin Network...</p>
 });
 
-export default function MapWrapper({ corridors }: { corridors?: any[] }) {
-  return <NetworkMap corridors={corridors} />;
+export default function MapWrapper({ corridors, vessels, refineries }: { corridors?: any[], vessels?: any[], refineries?: any[] }) {
+  return <NetworkMap corridors={corridors} vessels={vessels} refineries={refineries} />;
 }
 

@@ -91,6 +91,8 @@ export default function Dashboard() {
   const [procurementData, setProcurementData] = useState<any>(null);
   const [reserveData, setReserveData] = useState<any>(null);
   const [corridorsData, setCorridorsData] = useState<any[]>([]);
+  const [vessels, setVessels] = useState<any[]>([]);
+  const [refineries, setRefineries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -111,6 +113,8 @@ export default function Dashboard() {
         setScenarioData(stateData.scenario_data || null);
         setProcurementData(stateData.procurement_data || null);
         setReserveData(stateData.reserve_data || null);
+        setVessels(stateData.vessels || []);
+        setRefineries(stateData.refineries || []);
         setError(""); // Clear error on success
       } else {
         const errData = await stateRes.json();
@@ -201,7 +205,7 @@ export default function Dashboard() {
 
       {/* Hero Map Section */}
       <div className={styles.heroSection}>
-        <MapWrapper corridors={corridorsData} />
+        <MapWrapper corridors={corridorsData} vessels={vessels} refineries={refineries} />
       </div>
 
       {/* Content Grid */}

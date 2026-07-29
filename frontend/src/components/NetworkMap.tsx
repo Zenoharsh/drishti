@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Map, { Source, Layer, Marker, NavigationControl, FullscreenControl, Popup } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-export default function NetworkMap({ corridors }: { corridors?: any[] }) {
+export default function NetworkMap({ corridors, vessels = [], refineries = [] }: { corridors?: any[], vessels?: any[], refineries?: any[] }) {
   const [viewState, setViewState] = useState({
     longitude: 65.0,
     latitude: 20.0,
@@ -22,11 +22,7 @@ export default function NetworkMap({ corridors }: { corridors?: any[] }) {
   const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
   const mapStyle = `https://api.maptiler.com/maps/darkmatter/style.json?key=${MAPTILER_KEY}`;
 
-  const refineries = [
-    { id: "jamnagar", name: "Jamnagar Refinery", lat: 22.37, lon: 69.7 },
-    { id: "vizag", name: "Visakhapatnam Refinery", lat: 17.6868, lon: 83.2185 },
-    { id: "paradip", name: "Paradip Refinery", lat: 20.3167, lon: 86.6167 },
-  ];
+  // Refineries are now passed as props from the API
 
   const corridorsGeoJSON = useMemo(() => {
     const defaultFeatures = [
@@ -69,6 +65,18 @@ export default function NetworkMap({ corridors }: { corridors?: any[] }) {
     };
   }, [corridors]);
 
+  const vesselsGeoJSON = useMemo(() => {
+    const features = vessels.map((v: any, i: number) => ({
+      type: "Feature",
+      properties: { id: i, name: `Vessel ${i+1} (${v.corridor_id})`, radius: "N/A" },
+      geometry: { type: "Point", coordinates: [v.lon, v.lat] }
+    }));
+    return {
+      type: "FeatureCollection",
+      features
+    };
+  }, [vessels]);
+
   const onHover = (event: any) => {
     const feature = event.features && event.features[0];
     if (feature) {
@@ -109,7 +117,7 @@ export default function NetworkMap({ corridors }: { corridors?: any[] }) {
           onMove={evt => setViewState(evt.viewState)}
           mapStyle={mapStyle}
           interactive={true}
-          interactiveLayerIds={['corridors-layer']}
+          interactiveLayerIds={['corridors-layer', 'vessels-layer']}
           onMouseMove={onHover}
           onMouseLeave={() => setHoverInfo(null)}
         >
@@ -137,7 +145,23 @@ export default function NetworkMap({ corridors }: { corridors?: any[] }) {
             />
           </Source>
 
-          {refineries.map((ref) => (
+          {vesselsGeoJSON.features.length > 0 && (
+            <Source id="vessels" type="geojson" data={vesselsGeoJSON as any}>
+              <Layer 
+                id="vessels-layer" 
+                type="circle" 
+                paint={{
+                  "circle-color": "#ffffff",
+                  "circle-radius": 4,
+                  "circle-opacity": 0.8,
+                  "circle-stroke-width": 1,
+                  "circle-stroke-color": "var(--md-sys-color-primary)"
+                }} 
+              />
+            </Source>
+          )}
+
+          {refineries.map((ref: any) => (
             <Marker key={ref.id} longitude={ref.lon} latitude={ref.lat} anchor="center">
               <div 
                 style={{
@@ -206,6 +230,9 @@ export default function NetworkMap({ corridors }: { corridors?: any[] }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', font: 'var(--md-typescale-label-small-font)', fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: '0.25rem' }}>
           <span style={{ width: '12px', height: '12px', background: '#fff', borderRadius: '50%', boxShadow: "0 0 8px var(--md-sys-color-primary)" }} /> Refinery Target
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', font: 'var(--md-typescale-label-small-font)', fontSize: '0.6875rem', fontWeight: 500, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          <span style={{ width: '8px', height: '8px', background: '#fff', borderRadius: '50%', border: "1px solid var(--md-sys-color-primary)" }} /> Live Vessel (AIS)
         </div>
       </div>
     </div>
