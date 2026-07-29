@@ -102,11 +102,21 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     if (!scenarioData) setLoading(true);
     try {
-      const stateRes = await fetch(`${API_BASE}/dashboard/state`, {
+      let stateRes = await fetch(`${API_BASE}/dashboard/state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ corridor: activeCorridor })
       });
+      
+      // Auto-retry once for transient Supabase network drops
+      if (!stateRes.ok) {
+        stateRes = await fetch(`${API_BASE}/dashboard/state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ corridor: activeCorridor })
+        });
+      }
+
       if (stateRes.ok) {
         const stateData = await stateRes.json();
         setCorridorsData(stateData.corridors_data?.corridors || []);
