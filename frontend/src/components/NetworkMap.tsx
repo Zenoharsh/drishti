@@ -155,7 +155,7 @@ export default function NetworkMap({ corridors, vessels = [], refineries = [] }:
                   "circle-radius": 4,
                   "circle-opacity": 0.8,
                   "circle-stroke-width": 1,
-                  "circle-stroke-color": "var(--md-sys-color-primary)"
+                  "circle-stroke-color": "#d0bcff"
                 }} 
               />
             </Source>
