@@ -134,6 +134,26 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [activeCorridor]);
 
+  const handleRefreshSignals = async () => {
+    setLoading(true);
+    try {
+      // 1. Trigger the background AI ingestion pipeline
+      await fetch(`${API_BASE}/ingest/poll`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-ingest-secret": "df6d782e5781041d55a476ccd1b0951e"
+        }
+      });
+      // 2. Fetch the updated state
+      await fetchDashboardData();
+    } catch (err: any) {
+      console.error("Failed to trigger ingestion poll:", err);
+      setError("Failed to refresh signals");
+      setLoading(false);
+    }
+  };
+
   const disruptionScore = scenarioData ? (scenarioData.disruption_score * 100).toFixed(1) : 0;
   const isCrisis = scenarioData && scenarioData.disruption_score > 0.3;
 
@@ -177,7 +197,7 @@ export default function Dashboard() {
             ))}
           </select>
         </div>
-        <button onClick={fetchDashboardData} disabled={loading}>
+        <button onClick={handleRefreshSignals} disabled={loading}>
           <RefreshCcw size={18} className={loading ? "animate-spin" : ""} />
           {loading ? "Analyzing..." : "Refresh Signals"}
         </button>
