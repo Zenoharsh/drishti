@@ -13,7 +13,7 @@ from src.config.db import get_db
 def trigger_crisis():
     db = get_db()
     
-    print("🚨 Triggering Hormuz Geopolitical Crisis Simulation...")
+    print("[CRISIS] Triggering Hormuz Geopolitical Crisis Simulation...")
     time.sleep(1)
     
     # 1. Inject a scary headline
@@ -25,7 +25,7 @@ def trigger_crisis():
         "processed": False
     }
     db.table("headlines").insert(headline_hormuz).execute()
-    print("📰 Injected high-severity headline into database.")
+    print("[NEWS] Injected high-severity headline into database.")
     
     # 2. Simulate AIS drop (delete half the vessels in Hormuz)
     vessels = db.table("vessels").select("id").eq("corridor_id", "hormuz").execute().data
@@ -34,7 +34,7 @@ def trigger_crisis():
         if vessels_to_delete:
             for vid in vessels_to_delete:
                 db.table("vessels").delete().eq("id", vid).execute()
-            print(f"🚢 Removed {len(vessels_to_delete)} vessels from Hormuz (Simulating AIS diversion).")
+            print(f"[AIS] Removed {len(vessels_to_delete)} vessels from Hormuz (Simulating AIS diversion).")
             
     # 3. Simulate price spike
     price = {
@@ -42,18 +42,18 @@ def trigger_crisis():
         "price_usd": 105.50  # Sudden spike
     }
     db.table("commodity_prices").insert(price).execute()
-    print("📈 Injected Brent crude price spike to $105.50.")
+    print("[MARKET] Injected Brent crude price spike to $105.50.")
             
-    print("✅ Raw crisis data injected into database.")
-    print("🧠 Waking up Gemini AI Ingestion Engine to process the event...")
+    print("[OK] Raw crisis data injected into database.")
+    print("[AI] Waking up Gemini AI Ingestion Engine to process the event...")
     
     from src.routes.ingest import ingest_poll
     try:
         secret = os.environ.get("INGEST_SECRET", "df6d782e5781041d55a476ccd1b0951e")
         result = ingest_poll(x_ingest_secret=secret)
-        print(f"✅ AI Analysis complete! Processed {result.get('processed_by_gemini', 0)} headlines.")
+        print(f"[SUCCESS] AI Analysis complete! Processed {result.get('processed_by_gemini', 0)} headlines.")
     except Exception as e:
-        print(f"❌ Failed to wake up ingestion engine: {e}")
+        print(f"[ERROR] Failed to wake up ingestion engine: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
